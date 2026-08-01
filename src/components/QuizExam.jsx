@@ -13,6 +13,32 @@ const SUBMIT_ENDPOINT = `${API}/quiz/submit`; // উত্তর সাবমি
 // একটা পুরো URL আর একটা শুধু path দিলে সাবমিট ভুল জায়গায় চলে যাবে
 const EXAM_DURATION_SECONDS = 30 * 60; // ৪. ৩০ মিনিট টাইমার
 
+// ------------------------------------------------------------------
+// ৭. "question randomization" — প্রতিবার exam শুরু হলে প্রশ্নের অর্ডার
+// এবং প্রতিটা প্রশ্নের option অর্ডার এলোমেলো করে দিচ্ছি, যাতে পাশের
+// জনের স্ক্রিনে একই প্রশ্ন একই জায়গায় দেখা না যায় (নকল করা কঠিন হয়)।
+// চাইলে false করে বন্ধ রাখতে পারো (ডিবাগ/টেস্টিং এর সময়)।
+// ------------------------------------------------------------------
+const RANDOMIZE_QUESTIONS = true;
+const RANDOMIZE_OPTIONS = true;
+
+// ------------------------------------------------------------------
+// ৮. "tab switch korle auto submit" — কতবার ট্যাব ছাড়লে/মিনিমাইজ করলে
+// ওয়ার্নিং সহ্য করা হবে, তার লিমিট। লিমিট ক্রস করলেই এক্সাম অটো-সাবমিট
+// হয়ে যাবে। 0 দিলে প্রথমবার ট্যাব ছাড়লেই সাথে সাথে সাবমিট হয়ে যাবে।
+// ------------------------------------------------------------------
+const MAX_TAB_WARNINGS = 3;
+
+// Fisher-Yates shuffle — নতুন array রিটার্ন করে, original mutate করে না
+function shuffleArray(arr) {
+  const copy = [...arr];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
 export default function QuizExam() {
   const [status, setStatus] = useState("idle"); // idle | loading | running | submitted | error
   const [questions, setQuestions] = useState([]);
@@ -22,6 +48,7 @@ export default function QuizExam() {
   const [current, setCurrent] = useState(0);
   const [tabWarning, setTabWarning] = useState(0);
   const [scoreResult, setScoreResult] = useState(null); // ৬. সাবমিট রেসপন্স থেকে { score, total } এখানে রাখব
+  const [autoSubmitReason, setAutoSubmitReason] = useState(null); // ৮. "time_up" | "tab_switch" | null — সাবমিট স্ক্রিনে কারণ দেখানোর জন্য
   const timerRef = useRef(null);
   const startedAtRef = useRef(null);
 
@@ -44,7 +71,7 @@ export default function QuizExam() {
       if (remaining <= 0) {
         setTimeLeft(0);
         clearInterval(timerRef.current);
-        handleSubmit(true); // ৪. সময় শেষ হলে auto-submit
+        handleSubmit(true, "time_up"); // ৪. সময় শেষ হলে auto-submit
       } else {
         setTimeLeft(remaining);
       }
@@ -64,7 +91,20 @@ export default function QuizExam() {
       if (!res.ok) throw new Error("Failed to load questions");
       const data = await res.json();
       // প্রত্যাশিত ফরম্যাট: [{ id, question, options: [{id, text}, ...] }, ...]
-      setQuestions(data);
+
+      // ৭. এখানে randomize করছি — প্রশ্নের অর্ডার এবং প্রতিটার ভেতরের
+      // option অর্ডার। শুধু client-side shuffle (fetch করা ডেটার উপর),
+      // তাই সার্ভারের API/DB তে কোনো পরিবর্তন লাগবে না।
+      let processedQuestions = RANDOMIZE_QUESTIONS ? shuffleArray(data) : data;
+
+      if (RANDOMIZE_OPTIONS) {
+        processedQuestions = processedQuestions.map((q) => ({
+          ...q,
+          options: shuffleArray(q.options),
+        }));
+      }
+
+      setQuestions(processedQuestions);
       setStatus("running"); // এইখানে status "running" হওয়া মাত্রই উপরের useEffect টাইমার শুরু করে দেবে
     } catch (err) {
       setStatus("error");
@@ -81,19 +121,27 @@ export default function QuizExam() {
   };
 
   // ------------------------------------------------------------------
-  // সাবমিট — ম্যানুয়াল ক্লিকে অথবা টাইম শেষ হলে auto call হবে
+  // সাবমিট — ম্যানুয়াল ক্লিকে অথবা টাইম শেষ/ট্যাব-সুইচ লিমিটে auto call হবে
+  // reason প্যারামিটার শুধু UI-তে কারণ দেখানোর জন্য, সার্ভারেও পাঠাচ্ছি
+  // (চাইলে backend এ log/flag করতে পারবে কেন সাবমিট হলো)
   // ------------------------------------------------------------------
   // 🔧 useCallback সরিয়ে দিলাম — Next.js এর React Compiler নিজে থেকেই
   // মেমোয়াইজেশন করে দেয়, তাই ম্যানুয়াল useCallback আর দরকার নেই এবং
   // এটাই ছিল সেই "Compilation Skipped" warning-এর কারণ।
-  const handleSubmit = async (auto = false) => {
+  const handleSubmit = async (auto = false, reason = null) => {
     clearInterval(timerRef.current);
+    if (auto) setAutoSubmitReason(reason);
     setStatus("submitted");
     try {
       const res = await fetch(SUBMIT_ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ answers, autoSubmitted: auto }),
+        body: JSON.stringify({
+          answers,
+          autoSubmitted: auto,
+          autoSubmitReason: reason, // "time_up" | "tab_switch" | null
+          tabSwitchCount: tabWarning,
+        }),
       });
       const data = await res.json();
       // ৬. সার্ভার থেকে { score, total } আসছে, সেটা সেভ করছি "submitted" স্ক্রিনে দেখানোর জন্য
@@ -121,26 +169,39 @@ export default function QuizExam() {
   };
 
   // ------------------------------------------------------------------
-  // ৩. "screenshot neya jabe na" — সৎভাবে বলে রাখি: ব্রাউজারে সত্যিকারের
-  // স্ক্রিনশট ব্লক করার কোনো ওয়েব API নেই (মোবাইল OS/ব্রাউজার নিজের
-  // permission ছাড়া JS-কে screenshot capture আটকাতে দেয় না)।
-  // যেটা করা যায় সেটা হলো "deterrent + detection":
-  //   - ইউজার অন্য ট্যাবে গেলে / উইন্ডো blur হলে ধরে ফেলা এবং warning দেখানো
-  //   - বারবার ট্যাব switch করলে সেটা লগ/কাউন্ট রাখা (চাইলে সার্ভারে পাঠিয়ে
-  //     পরীক্ষককে flag করতে পারো)
+  // ৩ + ৮. "screenshot neya jabe na" + "tab switch korle auto submit"
+  // সৎভাবে বলে রাখি: ব্রাউজারে সত্যিকারের স্ক্রিনশট ব্লক করার কোনো
+  // ওয়েব API নেই (মোবাইল OS/ব্রাউজার নিজের permission ছাড়া JS-কে
+  // screenshot capture আটকাতে দেয় না)। যেটা করা যায় সেটা হলো
+  // "deterrent + detection":
+  //   - ইউজার অন্য ট্যাবে গেলে / উইন্ডো blur হলে ধরে ফেলা (visibilitychange)
+  //   - প্রতিবার তা caunt করে warning দেখানো
+  //   - MAX_TAB_WARNINGS ক্রস করলে exam নিজে থেকেই auto-submit হয়ে যাবে
+  //     (নিচে handleSubmit কে "tab_switch" reason দিয়ে কল করছি)
   // এটা screenshot নিজেই আটকায় না, কিন্তু নকল/অন্য জায়গায় দেখে উত্তর
-  // করার প্যাটার্ন অনেকটা কমায়।
+  // করার প্যাটার্ন এবং বারবার সরে যাওয়া অনেকটা কমায়।
   // ------------------------------------------------------------------
   useEffect(() => {
     if (status !== "running") return;
+
     const onVisibilityChange = () => {
-      if (document.hidden) {
-        setTabWarning((c) => c + 1);
-      }
+      if (!document.hidden) return;
+
+      setTabWarning((prev) => {
+        const next = prev + 1;
+        // পরের রেন্ডারে state আপডেট হওয়ার অপেক্ষা না করে, লিমিট ক্রস
+        // করলে সাথে সাথেই এখান থেকে auto-submit ট্রিগার করছি
+        if (next > MAX_TAB_WARNINGS) {
+          handleSubmit(true, "tab_switch");
+        }
+        return next;
+      });
     };
+
     document.addEventListener("visibilitychange", onVisibilityChange);
     return () =>
       document.removeEventListener("visibilitychange", onVisibilityChange);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
 
   const formatTime = (s) => {
@@ -160,6 +221,10 @@ export default function QuizExam() {
         <p className="mt-2 text-sm text-neutral-500">
           ৫০টি প্রশ্ন · সময় ৩০ মিনিট · শুরু করলে সাথে সাথে টাইমার চালু হয়ে
           যাবে
+        </p>
+        <p className="mt-1 text-xs text-neutral-400">
+          প্রশ্ন ও অপশনের অর্ডার প্রতিবার এলোমেলো থাকে · বারবার ট্যাব ছেড়ে গেলে
+          পরীক্ষা স্বয়ংক্রিয়ভাবে সাবমিট হয়ে যাবে
         </p>
         <button
           onClick={startExam}
@@ -197,6 +262,20 @@ export default function QuizExam() {
         <p className="mt-1 text-sm text-neutral-500">
           তোমার উত্তর সংরক্ষণ করা হয়েছে।
         </p>
+
+        {/* ৮. auto-submit হয়ে থাকলে কারণ দেখাচ্ছি, যাতে ইউজার বুঝতে পারে কেন হলো */}
+        {autoSubmitReason === "time_up" && (
+          <p className="mt-2 text-xs text-amber-600">
+            সময় শেষ হওয়ায় পরীক্ষা স্বয়ংক্রিয়ভাবে সাবমিট হয়েছে।
+          </p>
+        )}
+        {autoSubmitReason === "tab_switch" && (
+          <p className="mt-2 text-xs text-red-600">
+            বারবার ট্যাব পরিবর্তনের কারণে পরীক্ষা স্বয়ংক্রিয়ভাবে সাবমিট
+            হয়েছে।
+          </p>
+        )}
+
         {/* ৬. score আসলে সেটা দেখাচ্ছি, না আসলে (নেটওয়ার্ক এরর ইত্যাদি) এই অংশ স্কিপ হয়ে যাবে */}
         {scoreResult && (
           <div className="mt-4 rounded-lg bg-neutral-50 border border-neutral-200 py-3">
@@ -212,6 +291,7 @@ export default function QuizExam() {
 
   const q = questions[current];
   const answeredCount = Object.keys(answers).length;
+  const warningsLeft = Math.max(0, MAX_TAB_WARNINGS - tabWarning);
 
   return (
     <div className="max-w-2xl mx-auto p-4" {...antiCopyProps}>
@@ -231,10 +311,13 @@ export default function QuizExam() {
         </div>
       </div>
 
+      {/* ৮. ট্যাব ছাড়ার ওয়ার্নিং — এখন কতবার বাকি আছে সেটাও দেখাচ্ছি, যাতে
+          ইউজার বুঝতে পারে আর কতবার সরলে অটো-সাবমিট হয়ে যাবে */}
       {tabWarning > 0 && (
         <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
           <ShieldAlert size={14} />
           তুমি {tabWarning} বার ট্যাব ছেড়ে গিয়েছিলে — এই ঘটনা লগ করা হয়েছে।
+          আর {warningsLeft} বার সরলে পরীক্ষা স্বয়ংক্রিয়ভাবে সাবমিট হয়ে যাবে।
         </div>
       )}
 
