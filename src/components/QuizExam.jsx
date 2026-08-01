@@ -6,8 +6,9 @@ import { Clock, ShieldAlert, CheckCircle2, Lock } from "lucide-react";
 // ============================================================
 // ⚙️ CONFIG — নিজের সার্ভারের এন্ডপয়েন্ট এখানে বসাও
 // ============================================================
-const QUESTIONS_ENDPOINT = "NEXT_PUBLIC_API/quiz"; // 50 টা MCQ এখান থেকে fetch হবে
-const SUBMIT_ENDPOINT = "NEXT_PUBLIC_API/quiz/submit"; // উত্তর সাবমিট এখানে POST হবে
+const API = process.env.NEXT_PUBLIC_API;
+const QUESTIONS_ENDPOINT = `${API}/quiz`; // 50 টা MCQ এখান থেকে fetch হবে
+const SUBMIT_ENDPOINT = `${API}/quiz/submit`; // উত্তর সাবমিট এখানে POST হবে
 // ⚠️ দুইটাই একই সার্ভারে (localhost:5000) যাচ্ছে কিনা খেয়াল রাখো —
 // একটা পুরো URL আর একটা শুধু path দিলে সাবমিট ভুল জায়গায় চলে যাবে
 const EXAM_DURATION_SECONDS = 30 * 60; // ৪. ৩০ মিনিট টাইমার
