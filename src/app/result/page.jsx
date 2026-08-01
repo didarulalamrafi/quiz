@@ -3,7 +3,8 @@
 // করে HTML রেন্ডার করে ব্রাউজারে পাঠাবে — এক্সট্রা loading state লাগবে না।
 
 // নিজের এক্সপ্রেস সার্ভারের ঠিকানা — QuizExam.jsx তে যেটা ব্যবহার করেছো সেটাই
-const RESULTS_ENDPOINT = "http://localhost:5000/results";
+const API = process.env.NEXT_PUBLIC_API;
+const RESULTS_ENDPOINT = `${API}/results`;
 
 async function getResults() {
   const res = await fetch(RESULTS_ENDPOINT, {
