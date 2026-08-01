@@ -220,17 +220,17 @@ export default function QuizExam() {
         <h1 className="text-xl font-semibold text-neutral-900">MCQ পরীক্ষা</h1>
         <p className="mt-2 text-sm text-neutral-500">
           ৫০টি প্রশ্ন · সময় ৩০ মিনিট · শুরু করলে সাথে সাথে টাইমার চালু হয়ে
-          যাবে
+          যাবে।
         </p>
         <p className="mt-1 text-xs text-neutral-400">
-          প্রশ্ন ও অপশনের অর্ডার প্রতিবার এলোমেলো থাকে · বারবার ট্যাব ছেড়ে গেলে
-          পরীক্ষা স্বয়ংক্রিয়ভাবে সাবমিট হয়ে যাবে
+          প্রশ্ন ও অপশনের অর্ডার প্রতিবার এলোমেলো থাকে। বারবার ওয়েবসাইট থেকে বের
+          হলে পরীক্ষা স্বয়ংক্রিয়ভাবে সাবমিট হয়ে যাবে।
         </p>
         <button
           onClick={startExam}
           className="mt-6 w-full rounded-lg bg-neutral-900 text-white py-2.5 text-sm font-medium hover:bg-neutral-800 transition"
         >
-          পরীক্ষা শুরু করো
+          পরীক্ষা শুরু করুন
         </button>
       </div>
     );
@@ -247,7 +247,8 @@ export default function QuizExam() {
   if (status === "error") {
     return (
       <div className="max-w-md mx-auto mt-16 p-6 rounded-xl border border-red-200 bg-red-50 text-red-700 text-sm text-center">
-        প্রশ্ন লোড করা যায়নি। এন্ডপয়েন্ট ({QUESTIONS_ENDPOINT}) চেক করো।
+        প্রশ্ন লোড করা হয়নি। এন্ডপয়েন্ট ({QUESTIONS_ENDPOINT}) চেক করো অথবা
+        এডমিনের সাথে যোগাযোগ করুন
       </div>
     );
   }
@@ -257,7 +258,7 @@ export default function QuizExam() {
       <div className="max-w-md mx-auto mt-16 p-8 rounded-2xl border border-neutral-200 bg-white text-center">
         <CheckCircle2 className="mx-auto text-emerald-500" size={40} />
         <h2 className="mt-3 text-lg font-semibold text-neutral-900">
-          সাবমিট সম্পন্ন হয়েছে
+          সাবমিট সম্পন্ন হয়েছে।
         </h2>
         <p className="mt-1 text-sm text-neutral-500">
           তোমার উত্তর সংরক্ষণ করা হয়েছে।
@@ -316,8 +317,9 @@ export default function QuizExam() {
       {tabWarning > 0 && (
         <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
           <ShieldAlert size={14} />
-          তুমি {tabWarning} বার ট্যাব ছেড়ে গিয়েছিলে — এই ঘটনা লগ করা হয়েছে।
-          আর {warningsLeft} বার সরলে পরীক্ষা স্বয়ংক্রিয়ভাবে সাবমিট হয়ে যাবে।
+          আপনি {tabWarning} বার ট্যাব ছেড়ে গিয়েছিলে — এই ঘটনা রেকর্ড করা
+          হয়েছে। আর {warningsLeft} বার ওয়েবসাইট থেকে বের হলে পরীক্ষা
+          স্বয়ংক্রিয়ভাবে সাবমিট হয়ে যাবে।
         </div>
       )}
 
