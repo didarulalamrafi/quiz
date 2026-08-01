@@ -27,7 +27,7 @@ const RANDOMIZE_OPTIONS = true;
 // ওয়ার্নিং সহ্য করা হবে, তার লিমিট। লিমিট ক্রস করলেই এক্সাম অটো-সাবমিট
 // হয়ে যাবে। 0 দিলে প্রথমবার ট্যাব ছাড়লেই সাথে সাথে সাবমিট হয়ে যাবে।
 // ------------------------------------------------------------------
-const MAX_TAB_WARNINGS = 3;
+const MAX_TAB_WARNINGS = 2;
 
 // Fisher-Yates shuffle — নতুন array রিটার্ন করে, original mutate করে না
 function shuffleArray(arr) {
@@ -261,7 +261,7 @@ export default function QuizExam() {
           সাবমিট সম্পন্ন হয়েছে।
         </h2>
         <p className="mt-1 text-sm text-neutral-500">
-          তোমার উত্তর সংরক্ষণ করা হয়েছে।
+          আপনার উত্তর সংরক্ষণ করা হয়েছে।
         </p>
 
         {/* ৮. auto-submit হয়ে থাকলে কারণ দেখাচ্ছি, যাতে ইউজার বুঝতে পারে কেন হলো */}
@@ -272,7 +272,7 @@ export default function QuizExam() {
         )}
         {autoSubmitReason === "tab_switch" && (
           <p className="mt-2 text-xs text-red-600">
-            বারবার ট্যাব পরিবর্তনের কারণে পরীক্ষা স্বয়ংক্রিয়ভাবে সাবমিট
+            বারবার ওয়েবসাইট পরিবর্তনের কারণে পরীক্ষা স্বয়ংক্রিয়ভাবে সাবমিট
             হয়েছে।
           </p>
         )}
@@ -283,7 +283,9 @@ export default function QuizExam() {
             <p className="text-2xl font-bold text-neutral-900">
               {scoreResult.score} / {scoreResult.total}
             </p>
-            <p className="text-xs text-neutral-500 mt-1">তোমার স্কোর</p>
+            <p className="text-xs text-neutral-500 mt-1">
+              আপনার প্রাপ্ত নাম্বার
+            </p>
           </div>
         )}
       </div>
@@ -317,7 +319,7 @@ export default function QuizExam() {
       {tabWarning > 0 && (
         <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
           <ShieldAlert size={14} />
-          আপনি {tabWarning} বার ট্যাব ছেড়ে গিয়েছিলে — এই ঘটনা রেকর্ড করা
+          আপনি {tabWarning} বার ট্যাব ছেড়ে গিয়েছেন — এই ঘটনা রেকর্ড করা
           হয়েছে। আর {warningsLeft} বার ওয়েবসাইট থেকে বের হলে পরীক্ষা
           স্বয়ংক্রিয়ভাবে সাবমিট হয়ে যাবে।
         </div>

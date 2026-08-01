@@ -200,7 +200,7 @@ export default function Home() {
           <div className="flex items-start gap-3 py-4 border-t border-white/10">
             <StarMark className="w-3.5 h-3.5 mt-1 text-[#5FA39A] shrink-0" />
             <span className="text-[15px] text-[#F4F1E8]">
-              'আর-রাহিকুল মাখতুম' গ্রন্থটি পড়া শ্রেয়{" "}
+              আর-রাহিকুল মাখতুম গ্রন্থটি পড়া শ্রেয়{" "}
               <span className="inline-block text-[11.5px] text-[#D3A54D] border border-[#D3A54D]/30 rounded-full px-2.5 py-0.5 ml-1 align-middle">
                 প্রস্তাবিত
               </span>
