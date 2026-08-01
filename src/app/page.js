@@ -65,11 +65,19 @@ function StarMark({ className = "" }) {
 
 export default function Home() {
   return (
+    // ফিক্স ১: root এ overflow-x-hidden — যেকোনো চাইল্ড এলিমেন্ট (glow circle,
+    // ornament ইত্যাদি) ভিউপোর্টের বাইরে গেলেও এখন আর horizontal scroll/সাদা
+    // স্পেস তৈরি হবে না
     <div
-      className={`${hindSiliguri.className} flex flex-col flex-1 bg-[#0E1626] text-[#F4F1E8]`}
+      className={`${hindSiliguri.className} flex flex-col flex-1 bg-[#0E1626] text-[#F4F1E8] overflow-x-hidden`}
     >
       {/* ambient glow */}
-      <div className="relative">
+      {/* ফিক্স ২: এই wrapper divটাতেই আসল সমস্যা ছিল — w-[560px]/w-[420px] এর
+          glow circle গুলো right-[-10%]/left-[-15%] দিয়ে বাইরে ঠেলে দেওয়া
+          হয়েছিল, কিন্তু overflow-hidden না থাকায় সেই এক্সট্রা widthটা পুরো
+          পেজের scrollable area বাড়িয়ে দিচ্ছিল। overflow-hidden দিলে গ্লো
+          ইফেক্টটা ঠিক আগের মতোই দেখাবে, শুধু বাইরের অংশ clip হয়ে যাবে। */}
+      <div className="relative overflow-hidden">
         <div
           className="pointer-events-none absolute -top-40 right-[-10%] w-[560px] h-[560px] rounded-full opacity-[0.14] blur-[110px]"
           style={{ background: "#D3A54D" }}
