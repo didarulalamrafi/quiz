@@ -133,7 +133,7 @@ export default function Home() {
             </p>
             <div className="flex flex-wrap gap-4">
               <a
-                href="#"
+                href="/register"
                 className="inline-block px-7 py-3 rounded-md text-[14.5px] font-medium bg-[#D3A54D] text-[#0E1626] hover:brightness-110 transition"
               >
                 রেজিস্ট্রেশন করুন

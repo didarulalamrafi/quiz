@@ -30,14 +30,14 @@ export default function Navbar() {
             </li>
           ))}
           <li>
-            <Button
-              as={Link}
-              href="/quiz"
-              size="sm"
-              className="bg-[#D3A54D] text-[#0E1626] text-[12px] sm:text-[13.5px] font-medium hover:brightness-110 px-3 sm:px-4"
-            >
-              রেজিস্ট্রেশন
-            </Button>
+            <Link href="/register">
+              <Button
+                size="sm"
+                className="bg-[#D3A54D] text-[#0E1626] text-[12px] sm:text-[13.5px] font-medium hover:brightness-110 px-3 sm:px-4"
+              >
+                রেজিস্ট্রেশন
+              </Button>
+            </Link>
           </li>
         </ul>
       </header>
