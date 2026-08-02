@@ -57,38 +57,36 @@ function RegisterBN() {
         });
       }
 
-      // 1) create the account (email/password only — Google/Facebook
-      // login can't collect institute/class/phone, so we don't offer it here)
-      const { error: signUpError } = await authClient.signUp.email({
-        name: userInfo.name,
-        email: userInfo.email,
-        password: userInfo.password,
-        image: imageBase64,
-        phone: userInfo.phone,
-        institute: userInfo.institute,
-        class: userInfo.class,
-      });
+      // 🔧 আগে এখানে signUp.email() এর পরে আলাদা করে signIn.email() ও
+      // call করা হতো — কিন্তু better-auth এর emailAndPassword এ
+      // autoSignIn ডিফল্টভাবেই true (signUp সফল হলে নিজে থেকেই session
+      // তৈরি হয়ে যায়)। তাই দ্বিতীয় signIn call টা redundant ছিল, এবং
+      // সেটাই মাঝে মাঝে conflict করে router.push("/quiz") পর্যন্ত
+      // পৌঁছাতে দিচ্ছিল না — তাই বাদ দিলাম।
+      const { data: signUpData, error: signUpError } =
+        await authClient.signUp.email({
+          name: userInfo.name,
+          email: userInfo.email,
+          password: userInfo.password,
+          image: imageBase64,
+          phone: userInfo.phone,
+          institute: userInfo.institute,
+          class: userInfo.class,
+        });
+
+      // 🔧 debug এর জন্য — browser console এ (F12 → Console) exact
+      // response দেখা যাবে, কোনো সমস্যা হলে এখান থেকে বোঝা যাবে
+      console.log("signUp result:", { signUpData, signUpError });
 
       if (signUpError) {
         setFormError(signUpError.message ?? "অ্যাকাউন্ট তৈরি করা যায়নি");
         return;
       }
 
-      // 2) log the user in right away
-      const { error: signInError } = await authClient.signIn.email({
-        email: userInfo.email,
-        password: userInfo.password,
-      });
-
-      if (signInError) {
-        setFormError(
-          signInError.message ?? "লগইন করা যায়নি, আবার চেষ্টা করুন",
-        );
-        return;
-      }
-
       router.push("/quiz");
+      router.refresh(); // session server-side (middleware) এও যেন সাথে সাথে দেখা যায়
     } catch (err) {
+      console.error("Register submit failed:", err);
       setFormError("কিছু একটা সমস্যা হয়েছে, আবার চেষ্টা করুন");
     } finally {
       setIsSubmitting(false);
