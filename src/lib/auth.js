@@ -6,12 +6,11 @@ const client = new MongoClient(process.env.MONGO_URI);
 const db = client.db("Quiz");
 
 export const auth = betterAuth({
-  database: mongodbAdapter(db, {
-    // Optional: if you don't provide a client, database transactions won't be enabled.
-    client,
-  }),
+  database: mongodbAdapter(db, { client }),
+  secret: process.env.BETTER_AUTH_SECRET,
+  baseURL: process.env.BETTER_AUTH_URL,
+  trustedOrigins: ["http://localhost:3000", "https://bgc-quiz.vercel.app"],
   emailAndPassword: {
     enabled: true,
   },
 });
-console.log("MONGO_URI:", process.env.MONGO_URI);
