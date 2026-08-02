@@ -87,7 +87,7 @@ function RegisterBN() {
         return;
       }
 
-      router.push("/dashboard");
+      router.push("/quiz");
     } catch (err) {
       setFormError("কিছু একটা সমস্যা হয়েছে, আবার চেষ্টা করুন");
     } finally {
