@@ -39,6 +39,16 @@ export default function Navbar() {
               </Button>
             </Link>
           </li>
+          <li>
+            <Link href="/login">
+              <Button
+                size="sm"
+                className="bg-[#D3A54D] text-[#0E1626] text-[12px] sm:text-[13.5px] font-medium hover:brightness-110 px-3 sm:px-4"
+              >
+                Login
+              </Button>
+            </Link>
+          </li>
         </ul>
       </header>
     </nav>
