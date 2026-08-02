@@ -1,21 +1,21 @@
-import { Noto_Serif_Bengali, Hind_Siliguri } from "next/font/google";
+import { Anek_Bangla, Baloo_Da_2 } from "next/font/google";
 import Link from "next/link";
 
-const notoSerifBengali = Noto_Serif_Bengali({
+const anekBangla = Anek_Bangla({
   subsets: ["bengali"],
-  weight: ["500", "600"],
-  variable: "--font-display",
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-body",
 });
 
-const hindSiliguri = Hind_Siliguri({
+const balooDa2 = Baloo_Da_2({
   subsets: ["bengali"],
-  weight: ["400", "500", "600"],
-  variable: "--font-body",
+  weight: ["500", "600", "700", "800"],
+  variable: "--font-display",
 });
 
 const facts = [
   { k: "ইংরেজি তারিখ", v: "২৬ আগস্ট, ২০২৬" },
-  { k: "হিজরি তারিখ", v: "১২ রবিউল আউয়াল, ১৪৪৭" },
+  { k: "হিজরি তারিখ", v: "১২ রবিউল আউয়াল, ১৪৪৮" },
   { k: "বার", v: "বুধবার" },
   { k: "পদ্ধতি", v: "সম্পূর্ণ অনলাইন" },
 ];
@@ -34,7 +34,7 @@ const rules = [
   {
     n: "৩",
     title: "পুরস্কার",
-    desc: "শীর্ষ ৩ জনের জন্য আকর্ষণীয় পুরস্কার, নির্দিষ্ট নম্বরপ্রাপ্তদের জন্য সান্ত্বনা পুরস্কার।",
+    desc: "শীর্ষ ৩ জনের জন্য আকর্ষণীয় পুরস্কার এবং নির্দিষ্ট সংখ্যক নম্বর প্রাপ্তদের জন্য সান্ত্বনা পুরস্কার।",
   },
 ];
 
@@ -69,7 +69,7 @@ export default function Home() {
     // ornament ইত্যাদি) ভিউপোর্টের বাইরে গেলেও এখন আর horizontal scroll/সাদা
     // স্পেস তৈরি হবে না
     <div
-      className={`${hindSiliguri.className} flex flex-col flex-1 bg-[#0E1626] text-[#F4F1E8] overflow-x-hidden`}
+      className={`${anekBangla.className} flex flex-col flex-1 bg-[#0E1626] text-[#F4F1E8] overflow-x-hidden`}
     >
       {/* ambient glow */}
       {/* ফিক্স ২: এই wrapper divটাতেই আসল সমস্যা ছিল — w-[560px]/w-[420px] এর
@@ -90,10 +90,10 @@ export default function Home() {
         {/* header */}
         <header className="relative w-full max-w-[1080px] mx-auto px-6 pt-8 pb-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <StarMark className="w-6 h-6 text-[#D3A54D]" />
+            <StarMark className="w-15 h-15 text-[#D3A54D]" />
             <div>
               <div
-                className={`${notoSerifBengali.className} font-bold text-2xl  text-[#F4F1E8]`}
+                className={`${balooDa2.className} font-bold text-2xl  text-[#F4F1E8]`}
               >
                 সীরাত পাঠ প্রতিযোগিতা
               </div>
@@ -112,18 +112,18 @@ export default function Home() {
         {/* hero */}
         <section className="relative w-full max-w-[1080px] mx-auto px-6 pt-16 pb-20 grid md:grid-cols-[1.15fr_0.85fr] gap-14 items-center">
           <div>
-            <span className="inline-block text-[13px] tracking-wide text-[#D3A54D] mb-5">
-              ২য় বারের মতো আয়োজন · সম্পূর্ণ অনলাইনে
+            <span className="inline-block text-[16px] tracking-wide text-[#D3A54D] mb-5">
+              ২য় বারের মতো সম্পূর্ণ অনলাইনে
             </span>
             <h1
-              className={`${notoSerifBengali.className} text-[#F9F7F0] leading-[1.3] mb-6`}
+              className={`${balooDa2.className} text-[#F9F7F0] leading-[1.3] mb-6`}
               style={{ fontSize: "clamp(32px, 4.6vw, 50px)" }}
             >
               সীরাত পাঠ
               <br />
               প্রতিযোগিতা ২০২৬
             </h1>
-            <p className="text-[15.5px] leading-[1.9] text-[#B9BFD1] max-w-[480px] mb-9">
+            <p className="text-[16px] leading-[1.9] text-[#B9BFD1] max-w-[480px] mb-9">
               সর্বকালের সর্বশ্রেষ্ঠ মহামানব, বিশ্ব মানবতার মুক্তিদূত{" "}
               <span className="text-[#F4F1E8]">
                 হযরত মুহাম্মদ (সাল্লাল্লাহু আলাইহি ওয়া সাল্লাম)
@@ -161,12 +161,12 @@ export default function Home() {
 
       {/* quick facts — constellation strip */}
       <section className="relative w-full max-w-[1080px] mx-auto px-6 pb-24">
-        <div className="relative border-t border-white/10 pt-10 grid grid-cols-2 md:grid-cols-4 gap-y-10">
+        <div className="relative border-t border-white/10 pt-10 grid grid-cols-2 md:grid-cols-4 gap-y-15">
           {facts.map((f) => (
-            <div key={f.k} className="relative text-center px-3">
-              <span className="block w-1.5 h-1.5 rounded-full bg-[#D3A54D] mx-auto mb-4 -mt-[45px]" />
-              <div className="text-[11.5px] text-[#8890A6] mb-1.5">{f.k}</div>
-              <div className="text-[14.5px] font-medium text-[#F4F1E8]">
+            <div key={f.k} className="relative text-center px-5">
+              <span className="block w-2 h-2 rounded-full bg-[#D3A54D] mx-auto mb-4 -mt-[45px]" />
+              <div className="text-[14px] text-[#8890A6] mb-1">{f.k}</div>
+              <div className="text-[16px] font-medium text-[#F4F1E8]">
                 {f.v}
               </div>
             </div>
@@ -181,7 +181,7 @@ export default function Home() {
             প্রস্তুতি
           </span>
           <h2
-            className={`${notoSerifBengali.className} text-[24px] text-[#F9F7F0] mt-2`}
+            className={`${balooDa2.className} text-[24px] text-[#F9F7F0] mt-2`}
           >
             সিলেবাস
           </h2>
@@ -215,7 +215,7 @@ export default function Home() {
           অংশগ্রহণের যোগ্যতা
         </span>
         <p
-          className={`${notoSerifBengali.className} text-[22px] md:text-[26px] leading-[1.7] text-[#F4F1E8] mt-4`}
+          className={`${balooDa2.className} text-[22px] md:text-[26px] leading-[1.7] text-[#F4F1E8] mt-4`}
         >
           চট্টগ্রাম বিভাগের অন্তর্গত জাতি, ধর্ম ও বর্ণ নির্বিশেষে সবার জন্য
           উন্মুক্ত।
@@ -231,7 +231,7 @@ export default function Home() {
           নিয়মাবলী
         </span>
         <h2
-          className={`${notoSerifBengali.className} text-[24px] text-[#F9F7F0] mt-2 mb-10`}
+          className={`${balooDa2.className} text-[24px] text-[#F9F7F0] mt-2 mb-10`}
         >
           প্রতিযোগিতার নিয়ম
         </h2>
@@ -245,7 +245,7 @@ export default function Home() {
             >
               <span className="relative z-10 w-9 h-9 rounded-full border border-[#D3A54D]/40 bg-[#0E1626] flex items-center justify-center shrink-0">
                 <span
-                  className={`${notoSerifBengali.className} text-[14px] text-[#D3A54D]`}
+                  className={`${balooDa2.className} text-[14px] text-[#D3A54D]`}
                 >
                   {r.n}
                 </span>
@@ -269,7 +269,7 @@ export default function Home() {
           পুরস্কার
         </span>
         <h2
-          className={`${notoSerifBengali.className} text-[24px] text-[#F9F7F0] mt-2 mb-10`}
+          className={`${balooDa2.className} text-[24px] text-[#F9F7F0] mt-2 mb-10`}
         >
           বিজয়ীদের জন্য
         </h2>
@@ -283,7 +283,7 @@ export default function Home() {
             <div key={p.rank} className="text-center py-8 md:py-0 md:px-8">
               <StarMark className="w-4 h-4 text-[#D3A54D] mx-auto mb-4" />
               <div
-                className={`${notoSerifBengali.className} text-[30px] text-[#F9F7F0] mb-2`}
+                className={`${balooDa2.className} text-[30px] text-[#F9F7F0] mb-2`}
               >
                 {p.rank}
               </div>
@@ -301,7 +301,7 @@ export default function Home() {
       <section className="w-full max-w-[1080px] mx-auto px-6 pb-24 pt-4">
         <div className="rounded-2xl border border-[#D3A54D]/25 bg-white/[0.03] px-8 py-12 text-center">
           <h2
-            className={`${notoSerifBengali.className} text-[22px] md:text-[26px] text-[#F9F7F0] mb-3`}
+            className={`${balooDa2.className} text-[22px] md:text-[26px] text-[#F9F7F0] mb-3`}
           >
             প্রস্তুতি নাও, অংশ নাও
           </h2>
@@ -310,7 +310,7 @@ export default function Home() {
             করে দাও।
           </p>
           <a
-            href="#"
+            href="/register"
             className="inline-block px-8 py-3 rounded-md text-[14.5px] font-medium bg-[#D3A54D] text-[#0E1626] hover:brightness-110 transition"
           >
             রেজিস্ট্রেশন করুন

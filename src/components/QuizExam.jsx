@@ -13,7 +13,7 @@ const QUESTIONS_ENDPOINT = `${API}/quiz`; // 50 টা MCQ এখান থে�
 const SUBMIT_ENDPOINT = `${API}/quiz/submit`; // উত্তর সাবমিট এখানে POST হবে
 // ⚠️ দুইটাই একই সার্ভারে (localhost:5000) যাচ্ছে কিনা খেয়াল রাখো —
 // একটা পুরো URL আর একটা শুধু path দিলে সাবমিট ভুল জায়গায় চলে যাবে
-const EXAM_DURATION_SECONDS = 30 * 60; // ৪. ৩০ মিনিট টাইমার
+const EXAM_DURATION_SECONDS = 5 * 60; // ৪. ৩০ মিনিট টাইমার
 
 // ------------------------------------------------------------------
 // ৭. "question randomization" — প্রতিবার exam শুরু হলে প্রশ্নের অর্ডার
@@ -302,12 +302,12 @@ export default function QuizExam() {
 
         {/* ৮. auto-submit হয়ে থাকলে কারণ দেখাচ্ছি, যাতে ইউজার বুঝতে পারে কেন হলো */}
         {autoSubmitReason === "time_up" && (
-          <p className="mt-2 text-xs text-amber-600">
+          <p className="mt-2 text-lg text-amber-600">
             সময় শেষ হওয়ায় পরীক্ষা স্বয়ংক্রিয়ভাবে সাবমিট হয়েছে।
           </p>
         )}
         {autoSubmitReason === "tab_switch" && (
-          <p className="mt-2 text-xs text-red-600">
+          <p className="mt-2 text-lg text-red-600">
             বারবার ওয়েবসাইট পরিবর্তনের কারণে পরীক্ষা স্বয়ংক্রিয়ভাবে সাবমিট
             হয়েছে।
           </p>
@@ -319,7 +319,7 @@ export default function QuizExam() {
             <p className="text-2xl font-bold text-neutral-900">
               {scoreResult.score} / {scoreResult.total}
             </p>
-            <p className="text-xs text-neutral-500 mt-1">
+            <p className="text-lg text-neutral-500 mt-1">
               আপনার প্রাপ্ত নাম্বার
             </p>
           </div>
@@ -353,7 +353,7 @@ export default function QuizExam() {
       {/* ৮. ট্যাব ছাড়ার ওয়ার্নিং — এখন কতবার বাকি আছে সেটাও দেখাচ্ছি, যাতে
           ইউজার বুঝতে পারে আর কতবার সরলে অটো-সাবমিট হয়ে যাবে */}
       {tabWarning > 0 && (
-        <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+        <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-md text-amber-700">
           <ShieldAlert size={14} />
           আপনি {tabWarning} বার ট্যাব ছেড়ে গিয়েছেন — এই ঘটনা রেকর্ড করা
           হয়েছে। আর {warningsLeft} বার ওয়েবসাইট থেকে বের হলে পরীক্ষা
