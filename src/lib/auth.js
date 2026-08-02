@@ -13,4 +13,25 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
+  user: {
+    additionalFields: {
+      phone: {
+        type: "string",
+        required: false,
+      },
+      institute: {
+        type: "string",
+        required: false,
+      },
+      class: {
+        type: "string",
+        required: false,
+      },
+      role: {
+        type: "string",
+        required: false,
+        defaultValue: "user",
+      },
+    },
+  },
 });
