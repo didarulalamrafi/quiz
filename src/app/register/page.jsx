@@ -44,12 +44,26 @@ function RegisterBN() {
 
     setIsSubmitting(true);
     try {
+      // convert the photo to base64 so it can be saved directly on the
+      // user record via better-auth's built-in `image` field — no
+      // separate storage service needed
+      let imageBase64 = undefined;
+      if (photoFile) {
+        imageBase64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(photoFile);
+        });
+      }
+
       // 1) create the account (email/password only — Google/Facebook
       // login can't collect institute/class/phone, so we don't offer it here)
       const { error: signUpError } = await authClient.signUp.email({
         name: userInfo.name,
         email: userInfo.email,
         password: userInfo.password,
+        image: imageBase64,
         phone: userInfo.phone,
         institute: userInfo.institute,
         class: userInfo.class,
@@ -73,21 +87,7 @@ function RegisterBN() {
         return;
       }
 
-      // 3) optional photo upload
-      if (photoFile) {
-        const photoData = new FormData();
-        photoData.append("photo", photoFile);
-        try {
-          await fetch("/api/upload-avatar", {
-            method: "POST",
-            body: photoData,
-          });
-        } catch {
-          // non-blocking — registration still succeeds without the photo
-        }
-      }
-
-      router.push("/quiz");
+      router.push("/dashboard");
     } catch (err) {
       setFormError("কিছু একটা সমস্যা হয়েছে, আবার চেষ্টা করুন");
     } finally {
@@ -200,9 +200,9 @@ function RegisterBN() {
                   value.length < 3 ? "নাম কমপক্ষে ৩ অক্ষরের হতে হবে" : null
                 }
               >
-                <Label className="font-semibold text-[#1f2430]"> নাম</Label>
+                <Label className="font-semibold text-[#1f2430]">পুরো নাম</Label>
                 <Input
-                  placeholder="সার্টিফিকেট অনুযায়ী"
+                  placeholder="যেমনঃ রাকিব হাসান"
                   className="rounded-xl bg-[#f6f7f9] border-transparent"
                 />
                 <FieldError />
@@ -242,7 +242,7 @@ function RegisterBN() {
                     প্রতিষ্ঠানের নাম
                   </Label>
                   <Input
-                    placeholder="স্কুল/কলেজের নাম"
+                    placeholder="স্কুল / কলেজের নাম"
                     className="rounded-xl bg-[#f6f7f9] border-transparent"
                   />
                   <FieldError />
@@ -251,20 +251,12 @@ function RegisterBN() {
                 <TextField isRequired name="class">
                   <Label className="font-semibold text-[#1f2430]">শ্রেণি</Label>
                   <Input
-                    placeholder="অনার্স ১ম বর্ষ বাংলা বিভাগ "
+                    placeholder="যেমনঃ দশম"
                     className="rounded-xl bg-[#f6f7f9] border-transparent"
                   />
                   <FieldError />
                 </TextField>
               </div>
-              <TextField isRequired name="class">
-                <Label className="font-semibold text-[#1f2430]">ঠিকানা</Label>
-                <Input
-                  placeholder="গ্রাম, ইউনিয়ন, উপজেলা, জেলা"
-                  className="rounded-xl bg-[#f6f7f9] border-transparent"
-                />
-                <FieldError />
-              </TextField>
 
               <TextField
                 isRequired

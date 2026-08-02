@@ -1,14 +1,17 @@
 // src/app/result/page.jsx
-// এটা Server Component (উপরে "use client" নেই), তাই সরাসরি সার্ভারেই fetch
-// করে HTML রেন্ডার করে ব্রাউজারে পাঠাবে — এক্সট্রা loading state লাগবে না।
+// Server Component — server-side এ session চেক করে admin না হলে redirect
+// করে দেয়, তারপর result data fetch করে render করে।
 
-// নিজের এক্সপ্রেস সার্ভারের ঠিকানা — QuizExam.jsx তে যেটা ব্যবহার করেছো সেটাই
+import { redirect } from "next/navigation";
+import { headers } from "next/headers";
+import { auth } from "@/lib/auth"; // তোমার better-auth server instance
+
 const API = process.env.NEXT_PUBLIC_API;
 const RESULTS_ENDPOINT = `${API}/results`;
 
 async function getResults() {
   const res = await fetch(RESULTS_ENDPOINT, {
-    cache: "no-store", // সবসময় সর্বশেষ রেজাল্ট আনার জন্য, ক্যাশ না করে
+    cache: "no-store",
   });
   if (!res.ok) {
     throw new Error("Failed to fetch results");
@@ -28,19 +31,29 @@ function formatDate(dateStr) {
 }
 
 export default async function ResultPage() {
+  // ── admin-only guard ──────────────────────────────────────────────
+  const session = await auth.api.getSession({ headers: await headers() });
+
+  if (!session?.user) {
+    redirect("/login");
+  }
+  if (session.user.role !== "admin") {
+    redirect("/"); // admin না হলে হোমপেজে ফেরত পাঠাও
+  }
+  // ─────────────────────────────────────────────────────────────────
+
   let results = [];
   let loadError = null;
 
   try {
     results = await getResults();
   } catch (err) {
-    // সার্ভার (localhost:5000) বন্ধ থাকলে বা এরর দিলে এখানে ধরা পড়বে
     loadError =
-      "রেজাল্ট লোড করা যায়নি। এক্সপ্রেস সার্ভার (localhost:5000) চালু আছে কিনা চেক করো।";
+      "রেজাল্ট লোড করা যায়নি। এক্সপ্রেস সার্ভার চালু আছে কিনা চেক করো।";
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-5xl mx-auto p-6">
       <h1 className="text-xl font-semibold text-neutral-900">সব রেজাল্ট</h1>
       <p className="mt-1 text-sm text-neutral-500">
         মোট {results.length} জন পরীক্ষা দিয়েছে
@@ -64,6 +77,10 @@ export default async function ResultPage() {
             <thead className="bg-neutral-50 text-neutral-500 text-left">
               <tr>
                 <th className="px-4 py-2.5 font-medium">#</th>
+                <th className="px-4 py-2.5 font-medium">নাম</th>
+                <th className="px-4 py-2.5 font-medium">প্রতিষ্ঠান</th>
+                <th className="px-4 py-2.5 font-medium">শ্রেণি</th>
+                <th className="px-4 py-2.5 font-medium">মোবাইল</th>
                 <th className="px-4 py-2.5 font-medium">সাবমিট সময়</th>
                 <th className="px-4 py-2.5 font-medium">স্কোর</th>
                 <th className="px-4 py-2.5 font-medium">শতাংশ</th>
@@ -81,7 +98,19 @@ export default async function ResultPage() {
                     className="border-t border-neutral-100 hover:bg-neutral-50"
                   >
                     <td className="px-4 py-2.5 text-neutral-500">{i + 1}</td>
+                    <td className="px-4 py-2.5 text-neutral-900 font-medium whitespace-nowrap">
+                      {r.name || "—"}
+                    </td>
                     <td className="px-4 py-2.5 text-neutral-700">
+                      {r.institute || "—"}
+                    </td>
+                    <td className="px-4 py-2.5 text-neutral-700">
+                      {r.class || "—"}
+                    </td>
+                    <td className="px-4 py-2.5 text-neutral-700 whitespace-nowrap">
+                      {r.phone || "—"}
+                    </td>
+                    <td className="px-4 py-2.5 text-neutral-700 whitespace-nowrap">
                       {formatDate(r.submittedAt)}
                     </td>
                     <td className="px-4 py-2.5 font-medium text-neutral-900">
@@ -111,8 +140,3 @@ export default async function ResultPage() {
     </div>
   );
 }
-
-// ⚠️ নোট: এখন এই পেজ কে-ই সাবমিট করেছে সেই নাম/আইডি দেখাচ্ছে না, কারণ
-// QuizExam.jsx এখন কোনো নাম নেয় না। কে কোন রেজাল্ট সেটা আলাদা করতে চাইলে
-// বলো — কুইজ শুরুর আগে নাম/রোল নেওয়ার একটা ছোট ফর্ম যোগ করে দিতে পারি,
-// আর সার্ভারেও সেটা answers এর সাথে সেভ করে এই টেবিলে একটা কলাম যোগ করে দিব।

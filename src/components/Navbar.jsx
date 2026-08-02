@@ -26,13 +26,13 @@ export default function Navbar() {
         {/* Brand */}
         <Link href="/" className="flex items-center shrink-0">
           <span className="text-[16px] sm:text-[19px] font-bold tracking-tight whitespace-nowrap">
-            <span className="text-[#F4F1E8] text-2xl">BGC</span>
-            <span className="text-[#D3A54D] text-2xl">quiz</span>
+            <span className="text-[#F4F1E8]">BGC</span>
+            <span className="text-[#D3A54D]">quiz</span>
           </span>
         </Link>
 
         {/* Nav links — centered in the middle space */}
-        <nav className="flex items-center justify-center gap-3.5 sm:gap-6 text-[16px] sm:text-[14px] text-[#B9BFD1] flex-1 min-w-0">
+        <nav className="flex items-center justify-center gap-3.5 sm:gap-6 text-[12.5px] sm:text-[14px] text-[#B9BFD1] flex-1 min-w-0">
           <Link
             href="/"
             className="hover:text-[#F4F1E8] transition-colors whitespace-nowrap"
@@ -67,8 +67,11 @@ export default function Navbar() {
             <div className="w-16 sm:w-20 h-7 sm:h-8 rounded-full bg-white/5 animate-pulse" />
           ) : isLoggedIn ? (
             <div className="flex items-center gap-1.5 sm:gap-3">
-              {/* avatar + name */}
-              <div className="flex items-center gap-1.5 sm:gap-2">
+              {/* avatar + name — click to go to profile */}
+              <Link
+                href="/profile"
+                className="flex items-center gap-1.5 sm:gap-2 hover:opacity-80 transition-opacity"
+              >
                 {session.user.image ? (
                   <img
                     src={session.user.image}
@@ -83,7 +86,7 @@ export default function Navbar() {
                 <span className="hidden md:inline text-[13px] text-[#F4F1E8] max-w-[100px] truncate">
                   {session.user.name}
                 </span>
-              </div>
+              </Link>
 
               <button
                 onClick={handleLogout}

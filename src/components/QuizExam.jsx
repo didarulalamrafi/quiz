@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { Clock, ShieldAlert, CheckCircle2, Lock } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
 
 // ============================================================
 // ⚙️ CONFIG — নিজের সার্ভারের এন্ডপয়েন্ট এখানে বসাও
@@ -40,6 +42,11 @@ function shuffleArray(arr) {
 }
 
 export default function QuizExam() {
+  const router = useRouter();
+  // ── লগইন করা ইউজার — নাম/প্রতিষ্ঠান/শ্রেণি/মোবাইল সাবমিটের সাথে
+  // পাঠানোর জন্য, আর quiz page সরাসরি URL দিয়ে ঢুকলেও গার্ড করার জন্য
+  const { data: session, isPending: sessionLoading } = authClient.useSession();
+
   const [status, setStatus] = useState("idle"); // idle | loading | running | submitted | error
   const [questions, setQuestions] = useState([]);
   // answers = { [questionId]: selectedOptionId }  -> একটা প্রশ্নে একটাই value থাকবে, তাই single-select এমনিই guaranteed
@@ -51,6 +58,17 @@ export default function QuizExam() {
   const [autoSubmitReason, setAutoSubmitReason] = useState(null); // ৮. "time_up" | "tab_switch" | null — সাবমিট স্ক্রিনে কারণ দেখানোর জন্য
   const timerRef = useRef(null);
   const startedAtRef = useRef(null);
+
+  // ------------------------------------------------------------------
+  // লগইন গার্ড — সরাসরি /quiz URL এ ঢুকে গেলেও, লগইন করা না থাকলে
+  // লগইন পেজে পাঠিয়ে দিচ্ছি (নেভবারে লিংক লুকানো যথেষ্ট না, সরাসরি
+  // URL এ ঢোকা আটকাতে হলে page-level এও চেক লাগে)
+  // ------------------------------------------------------------------
+  useEffect(() => {
+    if (!sessionLoading && !session?.user) {
+      router.push("/login");
+    }
+  }, [sessionLoading, session, router]);
 
   // ------------------------------------------------------------------
   // ৫. "quiz start korar sate sate time count start hoiye jabe"
@@ -124,10 +142,11 @@ export default function QuizExam() {
   // সাবমিট — ম্যানুয়াল ক্লিকে অথবা টাইম শেষ/ট্যাব-সুইচ লিমিটে auto call হবে
   // reason প্যারামিটার শুধু UI-তে কারণ দেখানোর জন্য, সার্ভারেও পাঠাচ্ছি
   // (চাইলে backend এ log/flag করতে পারবে কেন সাবমিট হলো)
+  //
+  // 🆕 এখন session থেকে user এর name/phone/institute/class ও submit
+  // body তে পাঠাচ্ছি, যাতে Express সেটা result document এর সাথে সেভ
+  // করতে পারে এবং admin-এর রেজাল্ট পেজে কে কোনটা দিয়েছে দেখা যায়।
   // ------------------------------------------------------------------
-  // 🔧 useCallback সরিয়ে দিলাম — Next.js এর React Compiler নিজে থেকেই
-  // মেমোয়াইজেশন করে দেয়, তাই ম্যানুয়াল useCallback আর দরকার নেই এবং
-  // এটাই ছিল সেই "Compilation Skipped" warning-এর কারণ।
   const handleSubmit = async (auto = false, reason = null) => {
     clearInterval(timerRef.current);
     if (auto) setAutoSubmitReason(reason);
@@ -141,6 +160,13 @@ export default function QuizExam() {
           autoSubmitted: auto,
           autoSubmitReason: reason, // "time_up" | "tab_switch" | null
           tabSwitchCount: tabWarning,
+          // 🆕 কে সাবমিট করেছে তার তথ্য
+          userId: session?.user?.id,
+          name: session?.user?.name,
+          email: session?.user?.email,
+          phone: session?.user?.phone,
+          institute: session?.user?.institute,
+          class: session?.user?.class,
         }),
       });
       const data = await res.json();
@@ -214,6 +240,16 @@ export default function QuizExam() {
 
   // ================= UI =================
 
+  // সেশন এখনো লোড হচ্ছে, বা লগইন না থাকায় redirect হচ্ছে — এই সময়টায়
+  // ছোট একটা লোডিং স্টেট দেখাই যাতে ফাঁকা স্ক্রিন বা flash না দেখায়
+  if (sessionLoading || !session?.user) {
+    return (
+      <div className="max-w-md mx-auto mt-16 text-center text-neutral-500 text-sm">
+        লোড হচ্ছে...
+      </div>
+    );
+  }
+
   if (status === "idle") {
     return (
       <div className="max-w-md mx-auto mt-16 p-8 rounded-2xl border border-neutral-200 bg-white text-center">
@@ -223,8 +259,8 @@ export default function QuizExam() {
           যাবে।
         </p>
         <p className="mt-1 text-xs text-neutral-400">
-          প্রশ্ন ও অপশনের অর্ডার প্রতিবার এলোমেলো থাকে। বারবার ওয়েবসাইট থেকে বের
-          হলে পরীক্ষা স্বয়ংক্রিয়ভাবে সাবমিট হয়ে যাবে।
+          প্রশ্ন ও অপশনের অর্ডার প্রতিবার এলোমেলো থাকে। বারবার ওয়েবসাইট থেকে
+          বের হলে পরীক্ষা স্বয়ংক্রিয়ভাবে সাবমিট হয়ে যাবে।
         </p>
         <button
           onClick={startExam}
@@ -272,7 +308,7 @@ export default function QuizExam() {
         )}
         {autoSubmitReason === "tab_switch" && (
           <p className="mt-2 text-xs text-red-600">
-            বারবার ওয়েবসাইট পরিবর্তনের কারণে পরীক্ষা স্বয়ংক্রিয়ভাবে সাবমিট
+            বারবার ওয়েবসাইট পরিবর্তনের কারণে পরীক্ষা স্বয়ংক্রিয়ভাবে সাবমিট
             হয়েছে।
           </p>
         )}
@@ -320,7 +356,7 @@ export default function QuizExam() {
         <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
           <ShieldAlert size={14} />
           আপনি {tabWarning} বার ট্যাব ছেড়ে গিয়েছেন — এই ঘটনা রেকর্ড করা
-          হয়েছে। আর {warningsLeft} বার ওয়েবসাইট থেকে বের হলে পরীক্ষা
+          হয়েছে। আর {warningsLeft} বার ওয়েবসাইট থেকে বের হলে পরীক্ষা
           স্বয়ংক্রিয়ভাবে সাবমিট হয়ে যাবে।
         </div>
       )}
