@@ -50,13 +50,23 @@ export default function Navbar() {
             </Link>
           )}
 
-          {/* Result — only visible to admin */}
-          {isAdmin && (
+          {/* Result — every logged-in user sees their OWN result here */}
+          {isLoggedIn && (
             <Link
               href="/result"
               className="hover:text-[#F4F1E8] transition-colors whitespace-nowrap"
             >
               ফলাফল
+            </Link>
+          )}
+
+          {/* All results — admin only */}
+          {isAdmin && (
+            <Link
+              href="/admin/results"
+              className="hover:text-[#F4F1E8] transition-colors whitespace-nowrap"
+            >
+              সব রেজাল্ট
             </Link>
           )}
         </nav>

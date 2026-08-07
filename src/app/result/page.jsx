@@ -1,142 +1,127 @@
-// src/app/result/page.jsx
-// Server Component — server-side এ session চেক করে admin না হলে redirect
-// করে দেয়, তারপর result data fetch করে render করে।
+"use client";
 
-import { redirect } from "next/navigation";
-import { headers } from "next/headers";
-import { auth } from "@/lib/auth"; // তোমার better-auth server instance
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { AlertCircle, XCircle } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
+import Certificate from "@/components/Certificate";
 
 const API = process.env.NEXT_PUBLIC_API;
-const RESULTS_ENDPOINT = `${API}/results`;
+const MY_RESULT_ENDPOINT = `${API}/results/me`;
 
-async function getResults() {
-  const res = await fetch(RESULTS_ENDPOINT, {
-    cache: "no-store",
-  });
-  if (!res.ok) {
-    throw new Error("Failed to fetch results");
+export default function MyResultPage() {
+  const router = useRouter();
+  const { data: session, isPending: sessionLoading } = authClient.useSession();
+
+  const [status, setStatus] = useState("loading"); // loading | ready | not_found | error
+  const [result, setResult] = useState(null);
+  const [errorDetail, setErrorDetail] = useState("");
+
+  useEffect(() => {
+    if (!sessionLoading && !session?.user) {
+      router.push("/login");
+    }
+  }, [sessionLoading, session, router]);
+
+  useEffect(() => {
+    if (sessionLoading || !session?.user) return;
+
+    const load = async () => {
+      try {
+        const res = await fetch(MY_RESULT_ENDPOINT, {
+          credentials: "include", // কুকি পাঠানোর জন্য — backend এখন এটা দিয়েই userId বের করবে
+        });
+
+        if (res.status === 404) {
+          setStatus("not_found");
+          return;
+        }
+
+        if (!res.ok) {
+          let serverMsg = "";
+          try {
+            const errBody = await res.json();
+            serverMsg =
+              errBody?.message || errBody?.error || JSON.stringify(errBody);
+          } catch {
+            serverMsg = await res.text().catch(() => "");
+          }
+          console.error(`Failed to load result: ${res.status}`, serverMsg);
+          setErrorDetail(serverMsg);
+          throw new Error("Failed to load result");
+        }
+
+        const data = await res.json();
+        setResult(data);
+        setStatus("ready");
+      } catch (err) {
+        console.error(err);
+        setStatus("error");
+      }
+    };
+
+    load();
+  }, [sessionLoading, session]);
+
+  if (sessionLoading || !session?.user || status === "loading") {
+    return (
+      <div className="max-w-md mx-auto mt-16 text-center text-neutral-500 text-sm">
+        লোড হচ্ছে...
+      </div>
+    );
   }
-  return res.json();
-}
 
-function formatDate(dateStr) {
-  const d = new Date(dateStr);
-  return d.toLocaleString("bn-BD", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-export default async function ResultPage() {
-  // ── admin-only guard ──────────────────────────────────────────────
-  const session = await auth.api.getSession({ headers: await headers() });
-
-  if (!session?.user) {
-    redirect("/login");
+  if (status === "not_found") {
+    return (
+      <div className="max-w-md mx-auto my-12 p-8 rounded-2xl border border-neutral-200 bg-white text-center">
+        <AlertCircle className="mx-auto text-amber-500" size={36} />
+        <h2 className="mt-3 text-lg font-semibold text-neutral-900">
+          এখনো কোনো রেজাল্ট পাওয়া যায়নি
+        </h2>
+        <p className="mt-1 text-sm text-neutral-500">
+          পরীক্ষা সম্পন্ন করলে এখানে আপনার রেজাল্ট ও সার্টিফিকেট দেখতে পাবেন।
+        </p>
+        <button
+          onClick={() => router.push("/quiz")}
+          className="mt-5 rounded-lg bg-neutral-900 text-white px-4 py-2 text-sm font-medium hover:bg-neutral-800 transition"
+        >
+          পরীক্ষা দিতে যান
+        </button>
+      </div>
+    );
   }
-  if (session.user.role !== "admin") {
-    redirect("/"); // admin না হলে হোমপেজে ফেরত পাঠাও
-  }
-  // ─────────────────────────────────────────────────────────────────
 
-  let results = [];
-  let loadError = null;
-
-  try {
-    results = await getResults();
-  } catch (err) {
-    loadError =
-      "রেজাল্ট লোড করা যায়নি। এক্সপ্রেস সার্ভার চালু আছে কিনা চেক করো।";
+  if (status === "error") {
+    return (
+      <div className="max-w-md mx-auto mt-16 p-6 rounded-xl border border-red-200 bg-red-50 text-red-700 text-sm text-center">
+        <XCircle className="mx-auto mb-2" size={28} />
+        <p>রেজাল্ট লোড করা যায়নি। কিছুক্ষণ পর আবার চেষ্টা করুন।</p>
+        {errorDetail && (
+          <p className="mt-2 text-xs text-red-400 break-words">
+            ({errorDetail})
+          </p>
+        )}
+      </div>
+    );
   }
+
+  const percent = result?.total
+    ? Math.round((result.score / result.total) * 100)
+    : 0;
 
   return (
-    <div className="max-w-5xl mx-auto p-6">
-      <h1 className="text-xl font-semibold text-neutral-900">সব রেজাল্ট</h1>
-      <p className="mt-1 text-sm text-neutral-500">
-        মোট {results.length} জন পরীক্ষা দিয়েছে
-      </p>
+    <div className="max-w-2xl mx-auto p-4">
+      <div className="rounded-xl border border-neutral-200 bg-white p-6 mb-6 text-center">
+        <p className="text-sm text-neutral-500">আপনার প্রাপ্ত নম্বর</p>
+        <p className="mt-1 text-3xl font-bold text-neutral-900">
+          {result.score} / {result.total}{" "}
+          <span className="text-lg font-medium text-neutral-400">
+            ({percent}%)
+          </span>
+        </p>
+      </div>
 
-      {loadError && (
-        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {loadError}
-        </div>
-      )}
-
-      {!loadError && results.length === 0 && (
-        <div className="mt-6 rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-6 text-center text-sm text-neutral-500">
-          এখনো কেউ পরীক্ষা সাবমিট করেনি।
-        </div>
-      )}
-
-      {!loadError && results.length > 0 && (
-        <div className="mt-4 overflow-x-auto rounded-xl border border-neutral-200">
-          <table className="w-full text-sm">
-            <thead className="bg-neutral-50 text-neutral-500 text-left">
-              <tr>
-                <th className="px-4 py-2.5 font-medium">#</th>
-                <th className="px-4 py-2.5 font-medium">নাম</th>
-                <th className="px-4 py-2.5 font-medium">প্রতিষ্ঠান</th>
-                <th className="px-4 py-2.5 font-medium">শ্রেণি</th>
-                <th className="px-4 py-2.5 font-medium">মোবাইল</th>
-                <th className="px-4 py-2.5 font-medium">সাবমিট সময়</th>
-                <th className="px-4 py-2.5 font-medium">স্কোর</th>
-                <th className="px-4 py-2.5 font-medium">শতাংশ</th>
-                <th className="px-4 py-2.5 font-medium">অটো-সাবমিট</th>
-              </tr>
-            </thead>
-            <tbody>
-              {results.map((r, i) => {
-                const percent = r.total
-                  ? Math.round((r.score / r.total) * 100)
-                  : 0;
-                return (
-                  <tr
-                    key={r._id}
-                    className="border-t border-neutral-100 hover:bg-neutral-50"
-                  >
-                    <td className="px-4 py-2.5 text-neutral-500">{i + 1}</td>
-                    <td className="px-4 py-2.5 text-neutral-900 font-medium whitespace-nowrap">
-                      {r.name || "—"}
-                    </td>
-                    <td className="px-4 py-2.5 text-neutral-700">
-                      {r.institute || "—"}
-                    </td>
-                    <td className="px-4 py-2.5 text-neutral-700">
-                      {r.class || "—"}
-                    </td>
-                    <td className="px-4 py-2.5 text-neutral-700 whitespace-nowrap">
-                      {r.phone || "—"}
-                    </td>
-                    <td className="px-4 py-2.5 text-neutral-700 whitespace-nowrap">
-                      {formatDate(r.submittedAt)}
-                    </td>
-                    <td className="px-4 py-2.5 font-medium text-neutral-900">
-                      {r.score} / {r.total}
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                          percent >= 60
-                            ? "bg-emerald-100 text-emerald-700"
-                            : "bg-red-100 text-red-700"
-                        }`}
-                      >
-                        {percent}%
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5 text-neutral-500">
-                      {r.autoSubmitted ? "হ্যাঁ (টাইম শেষ)" : "না"}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {/* <Certificate result={result} /> */}
     </div>
   );
 }

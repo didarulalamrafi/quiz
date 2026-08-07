@@ -46,7 +46,7 @@ const quickLinks = [
 export default function Footer() {
   return (
     <footer
-      className={`${hindSiliguri.className} mt-10 relative w-full border-t border-white/10 bg-[#0B121F] text-[#F4F1E8] overflow-hidden`}
+      className={`${hindSiliguri.className} relative w-full border-t border-white/10 bg-[#0B121F] text-[#F4F1E8] overflow-hidden`}
     >
       {/* halka distinguishing touch — homepage-এর মতো bg না রেখে সামান্য গাঢ়, উপরে thin gold divider + soft glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-px bg-gradient-to-r from-transparent via-[#D3A54D]/60 to-transparent" />

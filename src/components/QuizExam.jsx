@@ -252,7 +252,7 @@ export default function QuizExam() {
 
   if (status === "idle") {
     return (
-      <div className="max-w-md mx-auto mt-16 p-8 rounded-2xl border border-neutral-200 bg-white text-center">
+      <div className="max-w-md mx-auto my-12 p-8 rounded-2xl border border-neutral-200 bg-white text-center">
         <h1 className="text-xl font-semibold text-neutral-900">MCQ পরীক্ষা</h1>
         <p className="mt-2 text-sm text-neutral-500">
           ৫০টি প্রশ্ন · সময় ৩০ মিনিট · শুরু করলে সাথে সাথে টাইমার চালু হয়ে
@@ -291,7 +291,7 @@ export default function QuizExam() {
 
   if (status === "submitted") {
     return (
-      <div className="max-w-md mx-auto mt-16 p-8 rounded-2xl border border-neutral-200 bg-white text-center">
+      <div className="max-w-md mx-auto my-12 p-8 rounded-2xl border border-neutral-200 bg-white text-center">
         <CheckCircle2 className="mx-auto text-emerald-500" size={40} />
         <h2 className="mt-3 text-lg font-semibold text-neutral-900">
           সাবমিট সম্পন্ন হয়েছে।
