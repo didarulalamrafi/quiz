@@ -10,6 +10,14 @@ export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET,
   baseURL: process.env.BETTER_AUTH_URL,
   trustedOrigins: ["http://localhost:3000", "https://bgc-quiz.vercel.app"],
+  cookie: {
+    name: "better-auth.session_token",
+    sameSite: "none", // ক্রস-ডোমেইনের জন্য
+    secure: true, // HTTPS এর জন্য
+    path: "/",
+    httpOnly: true,
+    maxAge: 60 * 60 * 24 * 7, // ৭ দিন
+  },
   emailAndPassword: {
     enabled: true,
   },
