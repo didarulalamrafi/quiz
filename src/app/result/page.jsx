@@ -6,8 +6,7 @@ import { AlertCircle, XCircle } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import Certificate from "@/components/Certificate";
 
-const API = process.env.NEXT_PUBLIC_API;
-const MY_RESULT_ENDPOINT = `${API}/results/me`;
+const MY_RESULT_ENDPOINT = "/api/backend/results/me";
 
 export default function MyResultPage() {
   const router = useRouter();
