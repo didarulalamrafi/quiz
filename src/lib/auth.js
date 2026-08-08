@@ -8,19 +8,28 @@ const db = client.db("Quiz");
 export const auth = betterAuth({
   database: mongodbAdapter(db, { client }),
   secret: process.env.BETTER_AUTH_SECRET,
-  baseURL: process.env.BETTER_AUTH_URL,
+
+  // 🆕 ⚠️ baseURL MUST be your Express backend URL
+  // Locally: http://localhost:5000
+  // Vercel: https://quiz-server-ivory.vercel.app
+  baseURL:
+    process.env.BETTER_AUTH_URL || "https://quiz-server-ivory.vercel.app",
+
   trustedOrigins: ["http://localhost:3000", "https://bgc-quiz.vercel.app"],
+
   cookie: {
     name: "better-auth.session_token",
-    sameSite: "none", // ক্রস-ডোমেইনের জন্য
-    secure: true, // HTTPS এর জন্য
+    sameSite: "none", // ✅ ক্রস-সাইট রিকোয়েস্টের জন্য
+    secure: true, // ✅ HTTPS-only (Vercel এ এটা থাকা আবশ্যক)
     path: "/",
-    httpOnly: true,
+    httpOnly: true, // ✅ JavaScript থেকে অ্যাক্সেস করা যাবে না (সিকিউরিটি)
     maxAge: 60 * 60 * 24 * 7, // ৭ দিন
   },
+
   emailAndPassword: {
     enabled: true,
   },
+
   user: {
     additionalFields: {
       phone: {
