@@ -6,13 +6,11 @@ import { Clock, ShieldAlert, CheckCircle2, Lock } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 
 // ============================================================
-// ⚙️ CONFIG — নিজের সার্ভারের এন্ডপয়েন্ট এখানে বসাও
+// ⚙️ CONFIG — এখন সবকিছু proxy পাথ দিয়ে যাচ্ছে, cross-site কুকি সমস্যা এড়াতে
 // ============================================================
-const API = process.env.NEXT_PUBLIC_API;
-const QUESTIONS_ENDPOINT = `${API}/quiz`; // 50 টা MCQ এখান থেকে fetch হবে
-const SUBMIT_ENDPOINT = `${API}/quiz/submit`; // উত্তর সাবমিট এখানে POST হবে
-// ⚠️ দুইটাই একই সার্ভারে (localhost:5000) যাচ্ছে কিনা খেয়াল রাখো —
-// একটা পুরো URL আর একটা শুধু path দিলে সাবমিট ভুল জায়গায় চলে যাবে
+const QUESTIONS_ENDPOINT = "/api/backend/quiz"; // 50 টা MCQ এখান থেকে fetch হবে
+const SUBMIT_ENDPOINT = "/api/backend/quiz/submit"; // উত্তর সাবমিট এখানে POST হবে
+const MY_RESULT_ENDPOINT = "/api/backend/results/me"; // 🆕 আগে সাবমিট করেছে কিনা চেক করার জন্য
 const EXAM_DURATION_SECONDS = 5 * 60; // ৪. ৩০ মিনিট টাইমার
 
 // ------------------------------------------------------------------
@@ -47,7 +45,8 @@ export default function QuizExam() {
   // পাঠানোর জন্য, আর quiz page সরাসরি URL দিয়ে ঢুকলেও গার্ড করার জন্য
   const { data: session, isPending: sessionLoading } = authClient.useSession();
 
-  const [status, setStatus] = useState("idle"); // idle | loading | running | submitted | error
+  // 🆕 idle | checking | already_taken | loading | running | submitted | error
+  const [status, setStatus] = useState("idle");
   const [questions, setQuestions] = useState([]);
   // answers = { [questionId]: selectedOptionId }  -> একটা প্রশ্নে একটাই value থাকবে, তাই single-select এমনিই guaranteed
   const [answers, setAnswers] = useState({});
@@ -56,6 +55,7 @@ export default function QuizExam() {
   const [tabWarning, setTabWarning] = useState(0);
   const [scoreResult, setScoreResult] = useState(null); // ৬. সাবমিট রেসপন্স থেকে { score, total } এখানে রাখব
   const [autoSubmitReason, setAutoSubmitReason] = useState(null); // ৮. "time_up" | "tab_switch" | null — সাবমিট স্ক্রিনে কারণ দেখানোর জন্য
+  const [existingResult, setExistingResult] = useState(null); // 🆕 আগের সাবমিট করা রেজাল্ট থাকলে এখানে
   const timerRef = useRef(null);
   const startedAtRef = useRef(null);
 
@@ -69,6 +69,45 @@ export default function QuizExam() {
       router.push("/login");
     }
   }, [sessionLoading, session, router]);
+
+  // ------------------------------------------------------------------
+  // 🆕 আগেই একবার সাবমিট করেছে কিনা চেক — পেজ লোড হওয়ার সাথে সাথেই
+  // /results/me কল করে দেখছি ইউজারের নামে আগে থেকে কোনো রেজাল্ট আছে
+  // কিনা। থাকলে "already_taken" স্ক্রিন দেখাবো, "পরীক্ষা শুরু করুন"
+  // বাটনই দেখাবো না। এটা শুধু UX — আসল আটকানোটা backend করবে,
+  // কারণ client-side চেক bypass করা সম্ভব (devtools দিয়ে সরাসরি
+  // /quiz/submit কল করে দিতে পারবে)।
+  // ------------------------------------------------------------------
+  useEffect(() => {
+    if (sessionLoading || !session?.user) return;
+
+    const checkExisting = async () => {
+      setStatus("checking");
+      try {
+        const res = await fetch(MY_RESULT_ENDPOINT, {
+          credentials: "include",
+        });
+        if (res.status === 404) {
+          setStatus("idle"); // আগে দেয়নি, শুরু করতে পারবে
+          return;
+        }
+        if (res.ok) {
+          const data = await res.json();
+          setExistingResult(data);
+          setStatus("already_taken");
+          return;
+        }
+        // অন্য কোনো এরর হলেও আটকে না রেখে শুরু করতে দিচ্ছি,
+        // backend নিজেই দ্বিতীয়বার সাবমিট আটকাবে
+        setStatus("idle");
+      } catch (err) {
+        console.error(err);
+        setStatus("idle");
+      }
+    };
+
+    checkExisting();
+  }, [sessionLoading, session]);
 
   // ------------------------------------------------------------------
   // ৫. "quiz start korar sate sate time count start hoiye jabe"
@@ -105,7 +144,7 @@ export default function QuizExam() {
   const startExam = async () => {
     setStatus("loading");
     try {
-      const res = await fetch(QUESTIONS_ENDPOINT);
+      const res = await fetch(QUESTIONS_ENDPOINT, { credentials: "include" });
       if (!res.ok) throw new Error("Failed to load questions");
       const data = await res.json();
       // প্রত্যাশিত ফরম্যাট: [{ id, question, options: [{id, text}, ...] }, ...]
@@ -143,9 +182,10 @@ export default function QuizExam() {
   // reason প্যারামিটার শুধু UI-তে কারণ দেখানোর জন্য, সার্ভারেও পাঠাচ্ছি
   // (চাইলে backend এ log/flag করতে পারবে কেন সাবমিট হলো)
   //
-  // 🆕 এখন session থেকে user এর name/phone/institute/class ও submit
-  // body তে পাঠাচ্ছি, যাতে Express সেটা result document এর সাথে সেভ
-  // করতে পারে এবং admin-এর রেজাল্ট পেজে কে কোনটা দিয়েছে দেখা যায়।
+  // 🆕 userId/name/email আর client থেকে পাঠাচ্ছি না — backend session
+  // কুকি (credentials: "include") থেকেই ইউজার শনাক্ত করবে। এটাই
+  // spoofing/duplicate-submit রোধের আসল জায়গা (backend পাশে requireAuth
+  // + আগের রেজাল্ট চেক বসাতে হবে)।
   // ------------------------------------------------------------------
   const handleSubmit = async (auto = false, reason = null) => {
     clearInterval(timerRef.current);
@@ -154,22 +194,24 @@ export default function QuizExam() {
     try {
       const res = await fetch(SUBMIT_ENDPOINT, {
         method: "POST",
+        credentials: "include", // 🆕 কুকি পাঠাতে হবে, backend এখান থেকেই userId বের করবে
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           answers,
           autoSubmitted: auto,
           autoSubmitReason: reason, // "time_up" | "tab_switch" | null
           tabSwitchCount: tabWarning,
-          // 🆕 কে সাবমিট করেছে তার তথ্য
-          userId: session?.user?.id,
-          name: session?.user?.name,
-          email: session?.user?.email,
-          phone: session?.user?.phone,
-          institute: session?.user?.institute,
-          class: session?.user?.class,
         }),
       });
       const data = await res.json();
+
+      // 🆕 backend যদি "আগেই সাবমিট করা আছে" বলে (৪০৯) সেটাও হ্যান্ডেল করছি
+      if (res.status === 409) {
+        setExistingResult(data.existing || null);
+        setStatus("already_taken");
+        return;
+      }
+
       // ৬. সার্ভার থেকে { score, total } আসছে, সেটা সেভ করছি "submitted" স্ক্রিনে দেখানোর জন্য
       if (data && typeof data.score === "number") {
         setScoreResult({ score: data.score, total: data.total });
@@ -240,12 +282,44 @@ export default function QuizExam() {
 
   // ================= UI =================
 
-  // সেশন এখনো লোড হচ্ছে, বা লগইন না থাকায় redirect হচ্ছে — এই সময়টায়
-  // ছোট একটা লোডিং স্টেট দেখাই যাতে ফাঁকা স্ক্রিন বা flash না দেখায়
-  if (sessionLoading || !session?.user) {
+  // সেশন এখনো লোড হচ্ছে, বা লগইন না থাকায় redirect হচ্ছে, বা আগের
+  // রেজাল্ট আছে কিনা চেক হচ্ছে — এই সময়টায় ছোট একটা লোডিং স্টেট
+  // দেখাই যাতে ফাঁকা স্ক্রিন বা flash না দেখায়
+  if (sessionLoading || !session?.user || status === "checking") {
     return (
       <div className="max-w-md mx-auto mt-16 text-center text-neutral-500 text-sm">
         লোড হচ্ছে...
+      </div>
+    );
+  }
+
+  // 🆕 আগেই একবার সাবমিট করা থাকলে — আর শুরু করতে দেওয়া হচ্ছে না
+  if (status === "already_taken") {
+    return (
+      <div className="max-w-md mx-auto my-12 p-8 rounded-2xl border border-neutral-200 bg-white text-center">
+        <Lock className="mx-auto text-neutral-400" size={36} />
+        <h2 className="mt-3 text-lg font-semibold text-neutral-900">
+          আপনি ইতিমধ্যে পরীক্ষা দিয়ে ফেলেছেন
+        </h2>
+        <p className="mt-1 text-sm text-neutral-500">
+          প্রতিটি একাউন্ট থেকে শুধু একবার পরীক্ষা দেওয়া যায়।
+        </p>
+        {existingResult && typeof existingResult.score === "number" && (
+          <div className="mt-4 rounded-lg bg-neutral-50 border border-neutral-200 py-3">
+            <p className="text-2xl font-bold text-neutral-900">
+              {existingResult.score} / {existingResult.total}
+            </p>
+            <p className="text-sm text-neutral-500 mt-1">
+              আপনার প্রাপ্ত নাম্বার
+            </p>
+          </div>
+        )}
+        <button
+          onClick={() => router.push("/results/me")}
+          className="mt-6 w-full rounded-lg bg-neutral-900 text-white py-2.5 text-sm font-medium hover:bg-neutral-800 transition"
+        >
+          আমার রেজাল্ট দেখুন
+        </button>
       </div>
     );
   }
@@ -260,7 +334,8 @@ export default function QuizExam() {
         </p>
         <p className="mt-1 text-xs text-neutral-400">
           প্রশ্ন ও অপশনের অর্ডার প্রতিবার এলোমেলো থাকে। বারবার ওয়েবসাইট থেকে
-          বের হলে পরীক্ষা স্বয়ংক্রিয়ভাবে সাবমিট হয়ে যাবে।
+          বের হলে পরীক্ষা স্বয়ংক্রিয়ভাবে সাবমিট হয়ে যাবে। প্রতিটি একাউন্ট
+          থেকে শুধু একবারই পরীক্ষা দেওয়া যাবে।
         </p>
         <button
           onClick={startExam}
