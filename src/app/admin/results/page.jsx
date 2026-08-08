@@ -8,12 +8,11 @@ import { authClient } from "@/lib/auth-client";
 // ============================================================
 // ⚙️ CONFIG
 // ============================================================
-const API = process.env.NEXT_PUBLIC_API;
 // 🆕 এই এন্ডপয়েন্ট শুধু admin এর জন্য — ব্যাকএন্ডে অবশ্যই server-side এ
 // চেক করতে হবে যে রিকোয়েস্ট করা ইউজারের role === "admin", নাহলে যে
 // কেউ URL সরাসরি কল করে সবার রেজাল্ট দেখে ফেলতে পারবে। এই পেজের
 // client-side চেকটা শুধু UX এর জন্য, security এর জন্য না।
-const ALL_RESULTS_ENDPOINT = `${API}/results`;
+const ALL_RESULTS_ENDPOINT = "/api/backend/results";
 
 // ------------------------------------------------------------------
 // 🆕 admin কে চেনার উপায় — session.user.role === "admin" ধরে নিচ্ছি।
@@ -55,7 +54,7 @@ export default function AdminResultsPage() {
         });
         if (!res.ok) throw new Error("Failed to load results");
         const data = await res.json();
-        // প্রত্যাশিত ফরম্যাট: [{ userId, name, email, phone, institute,
+        // প্রত্যাশিত ফরম্যাট: [{ _id, userId, name, email, phone, institute,
         //   class, score, total, submittedAt, autoSubmitted, autoSubmitReason }, ...]
         setResults(Array.isArray(data) ? data : []);
         setStatus("ready");
@@ -207,7 +206,7 @@ export default function AdminResultsPage() {
               const pct = r.total ? Math.round((r.score / r.total) * 100) : 0;
               return (
                 <tr
-                  key={r.userId || r.email}
+                  key={r._id}
                   className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50"
                 >
                   <td className="px-4 py-3 font-medium text-neutral-900">
