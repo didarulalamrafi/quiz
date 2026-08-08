@@ -302,7 +302,7 @@ export default function QuizExam() {
           আপনি ইতিমধ্যে পরীক্ষা দিয়ে ফেলেছেন
         </h2>
         <p className="mt-1 text-sm text-neutral-500">
-          প্রতিটি একাউন্ট থেকে শুধু একবার পরীক্ষা দেওয়া যায়।
+          প্রতিটি একাউন্ট থেকে শুধু একবার পরীক্ষা দেওয়া যাবে।
         </p>
         {existingResult && typeof existingResult.score === "number" && (
           <div className="mt-4 rounded-lg bg-neutral-50 border border-neutral-200 py-3">
@@ -315,10 +315,10 @@ export default function QuizExam() {
           </div>
         )}
         <button
-          onClick={() => router.push("/results/me")}
+          onClick={() => router.push("/results")}
           className="mt-6 w-full rounded-lg bg-neutral-900 text-white py-2.5 text-sm font-medium hover:bg-neutral-800 transition"
         >
-          আমার রেজাল্ট দেখুন
+          রেজাল্ট দেখুন
         </button>
       </div>
     );
